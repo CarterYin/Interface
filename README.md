@@ -3,7 +3,7 @@
   <h1 align="center">几个接口的实现</h1>
   <p align="center">
     <img src="https://img.shields.io/badge/Interface-blue?style=flat&logo=github" alt="Interface">
-    <img src="https://img.shields.io/badge/Python-purple%20%7C%20Interface-green" alt="Python">
+    <img src="https://img.shields.io/badge/Python%20%7C%20Interface-green" alt="Python">
   </p>
 </p>
 
