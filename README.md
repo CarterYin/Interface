@@ -55,7 +55,3 @@
 
 ***
 
-### 总结
-
-总而言之，这段代码定义了**流程 (What to do)** 和**接口 (How to connect)**，但你需要填充所有带 `# Implement ... logic here` 注释的函数和数据集类的核心方法，以完成**实际的计算 (How it works)**。
-* **必须完成：** `__len__`, `__getitem__`, `load_model`, `forward_single_sample`, `forward_batch_samples`, `compute_metrics` 的实现。
