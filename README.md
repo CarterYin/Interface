@@ -19,7 +19,7 @@
 
 这段代码提供了一个机器学习评估流程的**框架 (framework)**，但其中许多关键的功能逻辑是**缺失的**或**仅为占位符**。
 
-为了使这段代码能够实际运行并完成一个有意义的模型评估，你需要完成以下几个部分：
+为了使这段代码能够实际运行并完成一个有意义的模型评估，需要完成以下几个部分：
 
 ***
 
@@ -57,5 +57,5 @@
 
 ### 总结
 
-总而言之，这段代码为你定义了**流程 (What to do)** 和**接口 (How to connect)**，但你需要填充所有带 `# Implement ... logic here` 注释的函数和数据集类的核心方法，以完成**实际的计算 (How it works)**。
+总而言之，这段代码定义了**流程 (What to do)** 和**接口 (How to connect)**，但你需要填充所有带 `# Implement ... logic here` 注释的函数和数据集类的核心方法，以完成**实际的计算 (How it works)**。
 * **必须完成：** `__len__`, `__getitem__`, `load_model`, `forward_single_sample`, `forward_batch_samples`, `compute_metrics` 的实现。
