@@ -97,7 +97,7 @@ ds = load_dataset("lmms-lab/RefCOCO", split="val")
 print(f"数据集大小: {len(ds)}")
 print(f"第一个样本: {ds[0].keys()}")
 ```
-
+<!-- 
 ### 方式 2: 使用封装的 RefCOCODataset 类（推荐）
 
 ```python
@@ -150,7 +150,7 @@ metrics = compute_metrics(dataset, results)
 print("评估结果:")
 for key, value in metrics.items():
     print(f"  {key}: {value:.4f}")
-```
+``` -->
 
 ---
 
