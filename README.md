@@ -284,7 +284,7 @@ def forward_batch_samples(model, examples):
   - `testA`: 测试集 A（1,975 个样本，人物相关）
   - `testB`: 测试集 B（1,810 个样本，物体相关）
 
-### 加载方式
+<!-- ### 加载方式
 
 ```python
 from datasets import load_dataset
@@ -299,7 +299,7 @@ dataset = RefCOCODataset(split="val")
 
 **注意：** 首次运行时会自动从 HuggingFace 下载数据集（约几 GB），之后会使用缓存。
 
----
+--- -->
 
 <!-- ## 完整示例
 
