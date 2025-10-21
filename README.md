@@ -83,7 +83,7 @@ accuracy: 0.4123
 ```
 
 ---
-
+<!-- 
 ## 使用指南
 
 ### 方式 1: 直接使用 HuggingFace datasets
@@ -97,7 +97,7 @@ ds = load_dataset("lmms-lab/RefCOCO", split="val")
 print(f"数据集大小: {len(ds)}")
 print(f"第一个样本: {ds[0].keys()}")
 ```
-<!-- 
+
 ### 方式 2: 使用封装的 RefCOCODataset 类（推荐）
 
 ```python
@@ -150,9 +150,10 @@ metrics = compute_metrics(dataset, results)
 print("评估结果:")
 for key, value in metrics.items():
     print(f"  {key}: {value:.4f}")
-``` -->
+``` 
 
 ---
+
 
 ## 数据格式说明
 
@@ -190,6 +191,8 @@ def your_model_forward(model, images, texts):
 ```
 
 ---
+-->
+
 
 ## 评估指标说明
 
@@ -298,7 +301,7 @@ dataset = RefCOCODataset(split="val")
 
 ---
 
-## 完整示例
+<!-- ## 完整示例
 
 ```python
 import torch
@@ -340,9 +343,9 @@ for key, value in metrics.items():
     print(f"{key}: {value:.4f}")
 ```
 
----
+--- -->
 
-## 常见问题
+<!-- ## 常见问题
 
 ### Q1: 首次运行很慢？
 
@@ -376,7 +379,7 @@ python eval.py --max-samples 10
 - `__len__`: 返回数据集大小
 - `__getitem__`: 返回单个样本
 
----
+--- -->
 
 ## 文件结构
 
@@ -389,7 +392,7 @@ eval/
 
 ---
 
-## 主要接口说明
+<!-- ## 主要接口说明
 
 ### 数据集接口
 - `RefCOCODataset`: RefCOCO 数据集类
@@ -409,9 +412,9 @@ eval/
 ### 评估接口
 - `compute_metrics(dataset, results)`: 计算评估指标
 
----
+--- -->
 
-## 更新日志
+<!-- ## 更新日志
 
 ### v1.0 - 当前版本
 
@@ -437,7 +440,7 @@ python eval.py [--split SPLIT] [--max-samples N]
   --max-samples N     最大样本数量，用于快速测试
 ```
 
----
+--- -->
 
 ## 许可和贡献
 
