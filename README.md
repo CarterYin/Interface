@@ -1,6 +1,6 @@
 [//]: # (<br />)
 <p align="center">
-  <h1 align="center">RefCOCO 数据集评估框架</h1>
+  <h1 align="center">RefCOCO/ReasonSeg 数据集评估框架</h1>
   <p align="center">
     <img src="https://img.shields.io/badge/Interface-blue?style=flat&logo=github" alt="Interface">
     <img src="https://img.shields.io/badge/Python%20%7C%20Interface-green" alt="Python">
@@ -12,7 +12,8 @@
 这是一个封装好的 RefCOCO/ReasonSeg 数据集评估框架，方便后续扩展到不同模型和数据集。
 
 **主要特性：**
-- ✅ 自动加载 RefCOCO 数据集（使用 HuggingFace datasets）
+- ✅ 支持 RefCOCO 数据集（自动从 HuggingFace 加载）
+- ✅ 支持 ReasonSeg 数据集（本地加载，支持多边形标注）
 - ✅ 支持单样本和批量预测
 - ✅ 完整的评估指标计算（IoU, Precision, Recall, Accuracy）
 - ✅ 依赖最小化，易于集成到不同项目
@@ -40,17 +41,33 @@ Pillow>=8.0.0
 
 ### 2. 运行评估
 
+#### RefCOCO 数据集
+
 ```bash
-# 使用完整的 val 集
-python eval.py
+# RefCOCO val 集（自动从 HuggingFace 下载）
+python eval.py --dataset refcoco --split val
 
 # 只使用前 10 个样本快速测试
-python eval.py --max-samples 10
+python eval.py --dataset refcoco --split val --max-samples 10
 
 # 使用不同的数据集划分
-python eval.py --split test
-python eval.py --split testA
-python eval.py --split testB
+python eval.py --dataset refcoco --split test
+python eval.py --dataset refcoco --split testA
+python eval.py --dataset refcoco --split testB
+```
+
+#### ReasonSeg 数据集
+
+```bash
+# ReasonSeg val 集（需要先下载数据集到本地）
+python eval.py --dataset reasonseg --split val --data-root ReasonSeg
+
+# 使用训练集或测试集
+python eval.py --dataset reasonseg --split train --data-root ReasonSeg
+python eval.py --dataset reasonseg --split test --data-root ReasonSeg
+
+# 快速测试（只用前 10 个样本）
+python eval.py --dataset reasonseg --split val --max-samples 10
 ```
 
 **输出示例：**
@@ -84,6 +101,9 @@ accuracy: 0.4123
 
 ---
 
+
+
+---
 
 ## 评估指标说明
 
@@ -176,8 +196,46 @@ def forward_batch_samples(model, examples):
   - `testB`: 测试集 B（1,810 个样本，物体相关）
 
 
-## 许可和贡献
+## ReasonSeg 数据集说明
 
-欢迎提出 Issue 或 Pull Request！
+### 数据集结构
 
-如有问题或建议，欢迎联系。
+ReasonSeg 数据集的目录结构如下：
+
+```
+ReasonSeg/
+├── train/          # 训练集 (239 样本)
+│   ├── xxx.jpg
+│   ├── xxx.json
+│   └── ...
+├── val/            # 验证集 (200 样本)
+│   ├── xxx.jpg
+│   ├── xxx.json
+│   └── ...
+├── test/           # 测试集 (779 样本)
+│   ├── xxx.jpg
+│   ├── xxx.json
+│   └── ...
+└── explanatory/    # 解释性标注
+    └── train.json
+```
+
+### JSON 标注格式
+
+每个图像对应一个 JSON 文件，包含以下字段：
+
+```json
+{
+  "text": ["文本描述"],
+  "is_sentence": true/false,
+  "shapes": [
+    {
+      "label": "target",           // 标签类型：target, ignore, flag
+      "shape_type": "polygon",     // 形状类型
+      "points": [[x1, y1], [x2, y2], ...],  // 多边形顶点坐标
+      "image_name": "xxx.jpg"
+    }
+  ]
+}
+```
+

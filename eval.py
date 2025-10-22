@@ -161,11 +161,11 @@ class ReasonSegDataset(Dataset):
     """ReasonSeg 数据集类
     
     ReasonSeg 是一个复杂推理分割数据集，需要更复杂的推理能力
-    TODO: 需要实现具体的数据加载逻辑
+    数据集包含图像和对应的多边形标注，标注包括文本描述和分割区域
     
     Args:
-        data_root: 数据根目录
-        split: 数据集划分，如 'val', 'test'
+        data_root: 数据根目录（包含 train/val/test 子目录）
+        split: 数据集划分，如 'train', 'val', 'test'
         image_size: 图像大小
     """
     
@@ -180,16 +180,147 @@ class ReasonSegDataset(Dataset):
         self.split = split
         self.image_size = image_size
         
-        # TODO: 实现 ReasonSeg 数据加载
-        # 示例：
-        # self.dataset = load_dataset("path/to/reasonseg", split=split)
-        raise NotImplementedError("ReasonSeg 数据集加载尚未实现，请参考 RefCOCODataset 实现")
+        # 构建数据目录路径
+        self.split_dir = os.path.join(data_root, split)
+        
+        if not os.path.exists(self.split_dir):
+            raise ValueError(f"数据目录不存在: {self.split_dir}")
+        
+        # 获取所有图像文件
+        print(f"正在加载 ReasonSeg 数据集: split={split}, 目录={self.split_dir}")
+        all_files = os.listdir(self.split_dir)
+        
+        # 只保留 .jpg 文件，并确保对应的 .json 文件存在
+        self.image_files = []
+        for f in all_files:
+            if f.endswith('.jpg'):
+                json_file = f.replace('.jpg', '.json')
+                if json_file in all_files:
+                    self.image_files.append(f)
+        
+        self.image_files = sorted(self.image_files)
+        print(f"数据集加载完成，共 {len(self.image_files)} 个样本")
     
     def __len__(self) -> int:
-        raise NotImplementedError("ReasonSeg 数据集尚未实现")
+        """返回数据集大小"""
+        return len(self.image_files)
+    
+    def _polygon_to_mask(self, points: List[List[float]], img_width: int, img_height: int) -> np.ndarray:
+        """将多边形坐标转换为二值掩码
+        
+        Args:
+            points: 多边形顶点坐标列表 [[x1, y1], [x2, y2], ...]
+            img_width: 图像宽度
+            img_height: 图像高度
+        
+        Returns:
+            mask: 二值掩码数组 [H, W]
+        """
+        from PIL import ImageDraw
+        
+        # 创建空白掩码
+        mask = Image.new('L', (img_width, img_height), 0)
+        draw = ImageDraw.Draw(mask)
+        
+        # 将points转换为扁平化的坐标列表 [x1, y1, x2, y2, ...]
+        polygon_coords = []
+        for point in points:
+            polygon_coords.extend([float(point[0]), float(point[1])])
+        
+        # 绘制多边形
+        if len(polygon_coords) >= 6:  # 至少需要3个点（6个坐标值）
+            draw.polygon(polygon_coords, fill=255)
+        
+        return np.array(mask)
     
     def __getitem__(self, idx: int) -> Dict:
-        raise NotImplementedError("ReasonSeg 数据集尚未实现")
+        """获取单个数据样本
+        
+        Returns:
+            Dict: 包含以下键的字典
+                - image: 图像张量 [C, H, W]
+                - text: 文本描述
+                - mask: 真实分割掩码 [H, W]
+                - image_id: 图像ID
+                - bbox: 边界框（可选）
+        """
+        # 获取文件路径
+        image_file = self.image_files[idx]
+        json_file = image_file.replace('.jpg', '.json')
+        
+        image_path = os.path.join(self.split_dir, image_file)
+        json_path = os.path.join(self.split_dir, json_file)
+        
+        # 读取图像
+        image = Image.open(image_path)
+        orig_width, orig_height = image.size
+        
+        # 确保是 RGB 模式
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # 读取标注
+        with open(json_path, 'r', encoding='utf-8') as f:
+            annotation = json.load(f)
+        
+        # 提取文本描述
+        text_list = annotation.get('text', [''])
+        if isinstance(text_list, list) and len(text_list) > 0:
+            text = text_list[0]  # 使用第一个文本描述
+        else:
+            text = str(text_list)
+        
+        # 处理多边形标注，生成掩码
+        shapes = annotation.get('shapes', [])
+        
+        # 创建空白掩码
+        combined_mask = np.zeros((orig_height, orig_width), dtype=np.float32)
+        
+        # 将所有标记为 "target" 的多边形合并到掩码中
+        for shape in shapes:
+            if shape.get('label') == 'target':
+                points = shape.get('points', [])
+                if len(points) >= 3:  # 至少需要3个点才能构成多边形
+                    poly_mask = self._polygon_to_mask(points, orig_width, orig_height)
+                    combined_mask = np.maximum(combined_mask, poly_mask.astype(np.float32) / 255.0)
+        
+        # 调整图像和掩码大小
+        image = image.resize((self.image_size, self.image_size))
+        mask = Image.fromarray((combined_mask * 255).astype(np.uint8))
+        mask = mask.resize((self.image_size, self.image_size))
+        
+        # 转换为 tensor
+        image = torch.from_numpy(np.array(image)).float()
+        # [H, W, C] -> [C, H, W]
+        if len(image.shape) == 3:
+            image = image.permute(2, 0, 1)
+        # 归一化到 [0, 1]
+        if image.max() > 1:
+            image = image / 255.0
+        
+        mask = torch.from_numpy(np.array(mask)).float() / 255.0
+        
+        # 提取边界框（如果需要）
+        # 从掩码计算边界框
+        mask_np = mask.numpy()
+        ys, xs = np.where(mask_np > 0.5)
+        if len(xs) > 0 and len(ys) > 0:
+            x_min, x_max = xs.min(), xs.max()
+            y_min, y_max = ys.min(), ys.max()
+            bbox = [int(x_min), int(y_min), int(x_max), int(y_max)]
+        else:
+            bbox = None
+        
+        # 使用文件名作为 image_id
+        image_id = image_file.replace('.jpg', '')
+        
+        return {
+            "image_id": image_id,
+            "image": image,
+            "text": text,
+            "mask": mask,
+            "bbox": bbox,
+        }
 
 
 class SimpleSegmentationModel(nn.Module):
@@ -228,16 +359,35 @@ class SimpleSegmentationModel(nn.Module):
         return masks
 
 
-def main(split: str = "val", max_samples: int = None):
+def main(
+    dataset_type: str = "refcoco",
+    split: str = "val",
+    data_root: str = None,
+    max_samples: int = None
+):
     """主函数示例
     
     Args:
-        split: 数据集划分，可选: 'val', 'test', 'testA', 'testB'
+        dataset_type: 数据集类型，可选: 'refcoco', 'reasonseg'
+        split: 数据集划分
+            - RefCOCO: 'val', 'test', 'testA', 'testB'
+            - ReasonSeg: 'train', 'val', 'test'
+        data_root: ReasonSeg 数据集的根目录（仅当 dataset_type='reasonseg' 时需要）
         max_samples: 最大样本数量，用于快速测试（None 表示使用全部数据）
     """
     # 创建数据集
-    print("=== RefCOCO 数据集评估 ===")
-    dataset = RefCOCODataset(split=split)
+    if dataset_type.lower() == "refcoco":
+        print("=== RefCOCO 数据集评估 ===")
+        dataset = RefCOCODataset(split=split)
+    elif dataset_type.lower() == "reasonseg":
+        print("=== ReasonSeg 数据集评估 ===")
+        if data_root is None:
+            # 默认使用当前目录下的 ReasonSeg 文件夹
+            data_root = "ReasonSeg"
+        dataset = ReasonSegDataset(data_root=data_root, split=split)
+    else:
+        raise ValueError(f"不支持的数据集类型: {dataset_type}，可选: 'refcoco', 'reasonseg'")
+    
     print(f"数据集大小: {len(dataset)}")
     
     # 如果设置了 max_samples，则只使用部分数据
@@ -532,10 +682,38 @@ def forward_batch_samples(model: nn.Module, examples: List[Dict]) -> List[Dict]:
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description="RefCOCO 数据集评估")
-    parser.add_argument("--split", type=str, default="val", help="数据集划分（默认: val），可选: val, test, testA, testB")
-    parser.add_argument("--max-samples", type=int, default=None, help="最大样本数量，用于快速测试")
+    parser = argparse.ArgumentParser(description="RefCOCO/ReasonSeg 数据集评估")
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default="reasonseg",
+        choices=["refcoco", "reasonseg"],
+        help="数据集类型（默认: reasonseg）"
+    )
+    parser.add_argument(
+        "--split",
+        type=str,
+        default="val",
+        help="数据集划分（默认: val）。RefCOCO: val/test/testA/testB, ReasonSeg: train/val/test"
+    )
+    parser.add_argument(
+        "--data-root",
+        type=str,
+        default="ReasonSeg",
+        help="ReasonSeg 数据集根目录（默认: ReasonSeg）"
+    )
+    parser.add_argument(
+        "--max-samples",
+        type=int,
+        default=None,
+        help="最大样本数量，用于快速测试（默认: None，使用全部数据）"
+    )
     
     args = parser.parse_args()
     
-    main(split=args.split, max_samples=args.max_samples)
+    main(
+        dataset_type=args.dataset,
+        split=args.split,
+        data_root=args.data_root,
+        max_samples=args.max_samples
+    )
