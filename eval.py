@@ -327,7 +327,7 @@ class SimpleSegmentationModel(nn.Module):
     """简单的分割模型用于测试
     
     这是一个极简的模型，实际使用时应该替换为真实的模型
-    如 LISA, PixelLM, LAVT 等
+    如 load_, PixelLM, LAVT 等
     """
     
     def __init__(self, image_size: int = 224):
