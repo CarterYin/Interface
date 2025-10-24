@@ -4,55 +4,44 @@
 
 ## 快速开始
 
-### 1. 准备工作
+### 准备工作
+```
+cd LISA
+```
+
+```
+conda create -n lisa python=3.9 -y
+```
+
+```
+conda activate lisa
+```
 
 ```bash
 # 确保已安装必要依赖
 pip install torch torchvision pillow numpy opencv-python transformers
 
-# 将eval.py复制到LISA文件夹（或添加到Python路径）
-cp ../eval.py .
 ```
 
-### 2. 最简单的使用方式
-
-创建一个简单的评估脚本 `run_eval.py`:
-
-```python
-import sys
-import os
-
-# 导入eval.py中的函数
-from eval import ReasonSegDataset, predict_model_by_single_sample, compute_metrics
-
-# 导入LISA模型（这里需要实现load_model和forward_single_sample）
-# 见下面的完整示例
-
-# 1. 加载模型
-model = load_model()
-
-# 2. 加载数据集
-dataset = ReasonSegDataset("../ReasonSeg/val")
-
-# 3. 运行预测
-results = predict_model_by_single_sample(model, dataset)
-
-# 4. 计算指标
-metrics = compute_metrics(dataset, results)
-print(metrics)
+```
+pip install -U huggingface_hub
 ```
 
-### 3. 完整示例
+```
+export HF_ENDPOINT=https://hf-mirror.com
+```
 
-查看 `eval_lisa_example.py` 获取完整的实现示例，包括：
-- 如何加载LISA模型
-- 如何实现 `forward_single_sample` 函数
-- 如何处理分割任务和定位任务
+```
+wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+```
+
+在上级目录下载ReasonSeg数据集
+
+
 
 运行完整示例：
 
 ```bash
-cd LISA
 python eval_lisa_example.py
 ```
 
@@ -119,7 +108,7 @@ def forward_single_sample(model, example):
 ### ReasonSeg数据集
 
 ```
-E:\eval\ReasonSeg\val\
+E:\Interface\ReasonSeg\val\
 ├── image001.jpg
 ├── image001.json
 ├── image002.jpg
